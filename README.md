@@ -40,10 +40,10 @@ The plugin supports custom note templates for imported papers through external t
 ### How to Use Custom Templates
 
 1. Go to Settings → Paper Importer
-2. In the "Custom template file" field, specify the path to your template file (relative to vault root or absolute path)
-3. Click "Create template file" to generate a file with the default template, or create your own template file
+2. In the "Custom template file" field, specify the path to your template file (relative to vault root)
+3. Click "Create template file" to generate a file with the default template at that path, or create your own template file. If the field is empty, the file is created at `Templates/paper_importer_template.md` and the path is filled in automatically
 4. Edit the template file with your preferred text editor
-5. Leave the field empty to use the default template
+5. Leave the field empty (without creating a file) to use the built-in default template
 
 > [!Note]
 > The template is not written in valid Obsidian markdown formats. Be sure to edit it in source mode

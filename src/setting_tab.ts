@@ -8,6 +8,8 @@ import {
 import { DEFAULT_TEMPLATE } from "./default_template";
 import PaperImporterPlugin from "./main";
 
+const DEFAULT_TEMPLATE_FILE_PATH = "Templates/paper_importer_template.md";
+
 export class PaperImporterSettingTab extends PluginSettingTab {
 	plugin: PaperImporterPlugin;
 
@@ -50,7 +52,7 @@ export class PaperImporterSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Custom template file")
 			.setDesc(
-				"Path to a custom template file (relative to vault root or absolute path). Leave empty to use the default template."
+				`Path to a custom template file (relative to vault root). Leave empty to use the built-in template; click the button with an empty field to create one at ${DEFAULT_TEMPLATE_FILE_PATH}.`
 			)
 			.addText((text) =>
 				text
@@ -65,7 +67,7 @@ export class PaperImporterSettingTab extends PluginSettingTab {
 				button
 					.setButtonText("Create template file")
 					.setTooltip(
-						"Create a template file with the default template content"
+						`Create a template file with the default template content (at ${DEFAULT_TEMPLATE_FILE_PATH} if the field is empty)`
 					)
 					.onClick(async () => {
 						await this.createTemplateFile();
@@ -75,19 +77,24 @@ export class PaperImporterSettingTab extends PluginSettingTab {
 
 	async createTemplateFile(): Promise<void> {
 		try {
-			if (!this.plugin.settings.templateFilePath.trim()) {
-				new Notice("Please specify a template file path first!");
-				return;
-			}
-
+			const usingDefaultPath = !this.plugin.settings.templateFilePath.trim();
 			const templatePath = normalizePath(
-				this.plugin.settings.templateFilePath
+				usingDefaultPath
+					? DEFAULT_TEMPLATE_FILE_PATH
+					: this.plugin.settings.templateFilePath
 			);
 
 			// Check if file already exists
 			const exists = await this.app.vault.adapter.exists(templatePath);
 			if (exists) {
-				new Notice("Template file already exists!");
+				if (usingDefaultPath) {
+					await this.useTemplatePath(templatePath);
+					new Notice(
+						`Template file already exists, now using: ${templatePath}`
+					);
+				} else {
+					new Notice("Template file already exists!");
+				}
 				return;
 			}
 
@@ -108,10 +115,20 @@ export class PaperImporterSettingTab extends PluginSettingTab {
 
 			// Create the file with default template content
 			await this.app.vault.adapter.write(templatePath, DEFAULT_TEMPLATE);
+			if (usingDefaultPath) {
+				await this.useTemplatePath(templatePath);
+			}
 			new Notice(`Template file created: ${templatePath}`);
 		} catch (error) {
 			new Notice(`Failed to create template file: ${error.message}`);
 		}
+	}
+
+	// Save the path to settings and refresh the tab so the input shows it
+	async useTemplatePath(templatePath: string): Promise<void> {
+		this.plugin.settings.templateFilePath = templatePath;
+		await this.plugin.saveSettings();
+		this.display();
 	}
 }
 // Remember to rename these classes and interfaces!
